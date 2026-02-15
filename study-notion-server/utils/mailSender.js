@@ -1,15 +1,25 @@
 const nodemailer = require("nodemailer")
+const dns = require("dns")
+
+// ⭐ VERY IMPORTANT for Render (fixes ETIMEDOUT)
+dns.setDefaultResultOrder("ipv4first")
 
 const mailSender = async (email, title, body) => {
   try {
     // create transporter
     const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST, // smtp.gmail.com
-      port: 587, // use 587 for Gmail
-      secure: false, // false for 587
+      service: "gmail", // ⭐ more stable on Render than host/port config
       auth: {
-        user: process.env.MAIL_USER, // your gmail
-        pass: process.env.MAIL_PASS, // ⭐ APP PASSWORD (not gmail password)
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS, // Gmail APP PASSWORD
+      },
+
+      // ⭐ Prevent timeout issues on Render
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+      tls: {
+        rejectUnauthorized: false,
       },
     })
 
@@ -24,7 +34,7 @@ const mailSender = async (email, title, body) => {
     console.log("✅ Email sent:", info.response)
     return info
   } catch (error) {
-    console.error("❌ Mail Sender Error:", error)
+    console.error("❌ Mail Sender Error:", error.message)
     throw error
   }
 }
